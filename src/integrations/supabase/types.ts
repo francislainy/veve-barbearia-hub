@@ -107,6 +107,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      promote_user_role: {
+        Args: {
+          target_user_email: string
+          new_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
+      create_admin_user: {
+        Args: {
+          user_email: string
+          user_password: string
+          user_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "barbeiro" | "cliente"

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Scissors, Trash2, LogIn, Settings } from "lucide-react";
+import { Scissors, Trash2, LogIn, Settings, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -9,6 +9,8 @@ import { BookingCalendar } from "@/components/BookingCalendar";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
 import { BookingForm } from "@/components/BookingForm";
 import { ServiceSelector } from "@/components/ServiceSelector";
+import { MyBookings } from "@/components/MyBookings";
+import { UserRoleBadge } from "@/components/UserRoleBadge";
 import { Button } from "@/components/ui/button";
 import { useBookings } from "@/hooks/useBookings";
 import { toast } from "sonner";
@@ -16,7 +18,7 @@ import { toast } from "sonner";
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isBarbeiro } = useUserRole(user);
+  const { isBarbeiro, isAdmin } = useUserRole(user);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -58,25 +60,34 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-20 p-4">
-        <div className="container mx-auto flex justify-end gap-2">
-          {user ? (
-            <>
-              {isBarbeiro && (
-                <Button variant="outline" onClick={() => navigate("/admin")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Painel Admin
-                </Button>
-              )}
-              <Button variant="outline" onClick={signOut}>
-                Sair
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" onClick={() => navigate("/auth")}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Entrar
-            </Button>
+        <div className="container mx-auto flex justify-between items-center">
+          {user && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="text-sm font-medium">{user.email}</span>
+              <UserRoleBadge isBarbeiro={isBarbeiro} isAdmin={isAdmin} />
+            </div>
           )}
+          <div className="flex gap-2 ml-auto">
+            {user ? (
+              <>
+                {isBarbeiro && (
+                  <Button variant="outline" onClick={() => navigate("/admin")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Painel Admin
+                  </Button>
+                )}
+                <Button variant="outline" onClick={signOut}>
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" onClick={() => navigate("/auth")}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Entrar
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -232,14 +243,24 @@ const Index = () => {
             </>
           )}
 
-          {/* Bookings List */}
-          {isLoading ? (
+          {/* Role-based Bookings Display */}
+          {user && !isBarbeiro && (
+            /* Cliente view - shows only their own bookings */
+            <div className="mt-12">
+              <MyBookings userId={user.id} />
+            </div>
+          )}
+
+          {isBarbeiro && isLoading ? (
+            /* Barbeiro view - shows all bookings */
             <div className="mt-12 text-center">
               <p className="text-muted-foreground">Carregando agendamentos...</p>
             </div>
-          ) : bookings.length > 0 ? (
+          ) : isBarbeiro && bookings.length > 0 ? (
             <div className="mt-12">
-              <h3 className="text-2xl font-bold mb-6 text-center">Agendamentos Realizados</h3>
+              <h3 className="text-2xl font-bold mb-6 text-center">
+                Todos os Agendamentos (Visão Admin)
+              </h3>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {bookings.map((booking) => {
                   const displayDate = format(new Date(booking.date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR });
