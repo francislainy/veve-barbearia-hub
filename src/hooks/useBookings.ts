@@ -8,6 +8,7 @@ export interface Booking {
   phone: string;
   date: string;
   time: string;
+  service_id?: string | null;
 }
 
 export const useBookings = () => {
@@ -33,11 +34,25 @@ export const useBookings = () => {
     }
   };
 
-  const createBooking = async (name: string, phone: string, date: string, time: string, userId: string) => {
+  const createBooking = async (
+    name: string,
+    phone: string,
+    date: string,
+    time: string,
+    userId: string,
+    serviceId?: string
+  ) => {
     try {
       const { data, error } = await supabase
         .from("bookings")
-        .insert([{ name, phone, date, time, user_id: userId }])
+        .insert([{
+          name,
+          phone,
+          date,
+          time,
+          user_id: userId,
+          service_id: serviceId
+        }])
         .select()
         .single();
 
@@ -103,6 +118,5 @@ export const useBookings = () => {
     isLoading,
     createBooking,
     deleteBooking,
-    refreshBookings: fetchBookings,
   };
 };

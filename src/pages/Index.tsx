@@ -1,24 +1,32 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Scissors, Trash2, LogIn, Settings, User } from "lucide-react";
+import { Scissors, Trash2, LogIn, User, Calendar, Phone, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useServices } from "@/hooks/useServices";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
 import { BookingForm } from "@/components/BookingForm";
 import { ServiceSelector } from "@/components/ServiceSelector";
 import { MyBookings } from "@/components/MyBookings";
 import { UserRoleBadge } from "@/components/UserRoleBadge";
+import { AdminUserManagement } from "@/components/AdminUserManagement";
+import { AdminServiceManagement } from "@/components/AdminServiceManagement";
+import { AdminTimeSlotManagement } from "@/components/AdminTimeSlotManagement";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useBookings } from "@/hooks/useBookings";
 import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isBarbeiro, isAdmin } = useUserRole(user);
+  const { isAdmin, loading: roleLoading } = useUserRole(user);
+  const { services } = useServices();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -46,8 +54,8 @@ const Index = () => {
     }
 
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    const { success } = await createBooking(name, phone, formattedDate, selectedTime, user.id);
-    
+    const { success } = await createBooking(name, phone, formattedDate, selectedTime, user.id, selectedService);
+
     if (success) {
       // Reset form
       setSelectedService(null);
@@ -56,6 +64,139 @@ const Index = () => {
     }
   };
 
+  // Group active services by category for display
+  const activeServices = services.filter(service => service.is_active);
+
+  type Service = typeof services[number];
+  const groupedServices = activeServices.reduce<Record<string, Service[]>>((acc, service) => {
+    if (!acc[service.category]) {
+      acc[service.category] = [];
+    }
+    acc[service.category].push(service);
+    return acc;
+  }, {});
+
+  // If we're still loading roles, show loading state
+  if (roleLoading && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando dashboard...</p>
+      </div>
+    );
+  }
+
+  // Admin Dashboard View
+  if (user && isAdmin) {
+    const sortedBookings = [...bookings].sort((a, b) => {
+      const dateA = new Date(a.date + " " + a.time);
+      const dateB = new Date(b.date + " " + b.time);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary">
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Scissors className="h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold">Vevé Barbershop - Painel Admin</h1>
+              </div>
+              <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">{user.email}</span>
+                  <UserRoleBadge isAdmin={isAdmin} />
+                </div>
+                <Button variant="outline" onClick={signOut}>
+                  Sair
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+          <Tabs defaultValue="bookings" className="space-y-8">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="bookings">Agendamentos</TabsTrigger>
+              <TabsTrigger value="services">Serviços</TabsTrigger>
+              <TabsTrigger value="timeslots">Horários</TabsTrigger>
+              <TabsTrigger value="users">Usuários</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="bookings">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Agendamentos ({bookings.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <p className="text-center text-muted-foreground">Carregando agendamentos...</p>
+                  ) : sortedBookings.length === 0 ? (
+                    <p className="text-center text-muted-foreground">Nenhum agendamento encontrado.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Telefone</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Horário</TableHead>
+                          <TableHead>Serviço</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedBookings.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell className="font-medium">{booking.name}</TableCell>
+                            <TableCell>{booking.phone}</TableCell>
+                            <TableCell>
+                              {format(new Date(booking.date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>{booking.time}</TableCell>
+                            <TableCell>{booking.service_name || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteBooking(booking.id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="services">
+              <AdminServiceManagement />
+            </TabsContent>
+
+            <TabsContent value="timeslots">
+              <AdminTimeSlotManagement />
+            </TabsContent>
+
+            <TabsContent value="users">
+              <AdminUserManagement />
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
+    );
+  }
+
+  // Client Dashboard View (existing booking interface)
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -65,22 +206,14 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="text-sm font-medium">{user.email}</span>
-              <UserRoleBadge isBarbeiro={isBarbeiro} isAdmin={isAdmin} />
+              <UserRoleBadge isAdmin={isAdmin} />
             </div>
           )}
           <div className="flex gap-2 ml-auto">
             {user ? (
-              <>
-                {isBarbeiro && (
-                  <Button variant="outline" onClick={() => navigate("/admin")}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Painel Admin
-                  </Button>
-                )}
-                <Button variant="outline" onClick={signOut}>
-                  Sair
-                </Button>
-              </>
+              <Button variant="outline" onClick={signOut}>
+                Sair
+              </Button>
             ) : (
               <Button variant="outline" onClick={() => navigate("/auth")}>
                 <LogIn className="mr-2 h-4 w-4" />
@@ -117,89 +250,22 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Cabelo */}
-            <div className="p-6 bg-card border border-border rounded-lg shadow-premium">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Scissors className="h-5 w-5 text-primary" />
-                Cabelo
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Corte de cabelo</span>
-                  <span className="font-semibold text-foreground">R$ 40,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pézinho</span>
-                  <span className="font-semibold text-foreground">R$ 15,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Penteado</span>
-                  <span className="font-semibold text-foreground">R$ 20,00</span>
+            {Object.entries(groupedServices).map(([category, categoryServices]) => (
+              <div key={category} className="p-6 bg-card border border-border rounded-lg shadow-premium">
+                <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Scissors className="h-5 w-5 text-primary" />
+                  {category}
+                </h3>
+                <div className="space-y-2">
+                  {(categoryServices as Service[]).map((service) => (
+                    <div key={service.id} className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{service.name}</span>
+                      <span className="font-semibold text-foreground">R$ {service.price.toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-
-            {/* Barba */}
-            <div className="p-6 bg-card border border-border rounded-lg shadow-premium">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Scissors className="h-5 w-5 text-primary" />
-                Barba
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Barba</span>
-                  <span className="font-semibold text-foreground">R$ 30,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Cavanhaque</span>
-                  <span className="font-semibold text-foreground">R$ 30,00</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sobrancelha */}
-            <div className="p-6 bg-card border border-border rounded-lg shadow-premium">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Scissors className="h-5 w-5 text-primary" />
-                Sobrancelha
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Sobrancelha</span>
-                  <span className="font-semibold text-foreground">R$ 15,00</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Química */}
-            <div className="p-6 bg-card border border-border rounded-lg shadow-premium">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Scissors className="h-5 w-5 text-primary" />
-                Química
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Progressiva</span>
-                  <span className="font-semibold text-foreground">R$ 60,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pigmentação</span>
-                  <span className="font-semibold text-foreground">R$ 30,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Alisante</span>
-                  <span className="font-semibold text-foreground">R$ 30,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Luzes</span>
-                  <span className="font-semibold text-foreground">R$ 40,00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Platinado</span>
-                  <span className="font-semibold text-foreground">R$ 120,00</span>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -243,55 +309,12 @@ const Index = () => {
             </>
           )}
 
-          {/* Role-based Bookings Display */}
-          {user && !isBarbeiro && (
-            /* Cliente view - shows only their own bookings */
+          {/* Client's own bookings */}
+          {user && !isAdmin && (
             <div className="mt-12">
               <MyBookings userId={user.id} />
             </div>
           )}
-
-          {isBarbeiro && isLoading ? (
-            /* Barbeiro view - shows all bookings */
-            <div className="mt-12 text-center">
-              <p className="text-muted-foreground">Carregando agendamentos...</p>
-            </div>
-          ) : isBarbeiro && bookings.length > 0 ? (
-            <div className="mt-12">
-              <h3 className="text-2xl font-bold mb-6 text-center">
-                Todos os Agendamentos (Visão Admin)
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {bookings.map((booking) => {
-                  const displayDate = format(new Date(booking.date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR });
-                  return (
-                    <div
-                      key={booking.id}
-                      className="p-4 bg-card border border-border rounded-lg shadow-premium hover:shadow-glow transition-all duration-300"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Scissors className="h-5 w-5 text-primary" />
-                          <h4 className="font-semibold text-foreground">{booking.name}</h4>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteBooking(booking.id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground">📞 {booking.phone}</p>
-                      <p className="text-sm text-muted-foreground">📅 {displayDate}</p>
-                      <p className="text-sm text-muted-foreground">🕐 {booking.time}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
         </div>
       </section>
 
@@ -299,11 +322,12 @@ const Index = () => {
       <footer className="border-t border-border mt-20">
         <div className="container mx-auto px-4 py-8 text-center">
           <div className="mb-4">
-            <h3 className="font-semibold text-foreground mb-2">Nosso Endereço</h3>
-            <p className="text-muted-foreground">Galeria do Galeto, Rua Ator Paulo Gustavo, 282</p>
-            <p className="text-muted-foreground">Loja 112, Icaraí, Niterói</p>
+            <Scissors className="h-8 w-8 text-primary mx-auto mb-2" />
+            <h3 className="text-xl font-bold text-foreground">Vevé Barbershop</h3>
           </div>
-          <p className="text-muted-foreground">© 2025 Vevé Barbershop - Todos os direitos reservados</p>
+          <p className="text-muted-foreground">
+            © 2024 Vevé Barbershop. Todos os direitos reservados.
+          </p>
         </div>
       </footer>
     </div>

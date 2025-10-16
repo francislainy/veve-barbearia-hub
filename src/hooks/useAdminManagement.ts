@@ -13,7 +13,7 @@ interface RpcResponse {
 export const useAdminManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const promoteUserToRole = async (email: string, role: "admin" | "barbeiro") => {
+  const promoteUserToRole = async (email: string, role: "admin") => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc("promote_user_role" as any, {
@@ -46,7 +46,7 @@ export const useAdminManagement = () => {
     }
   };
 
-  const createAdminUser = async (email: string, password: string, role: "admin" | "barbeiro" = "admin") => {
+  const createAdminUser = async (email: string, password: string, role: "admin" = "admin") => {
     setIsLoading(true);
     try {
       // Use Supabase Admin API to create user

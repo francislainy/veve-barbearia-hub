@@ -4,12 +4,21 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: 'admin' | 'barbeiro';
+  requireRole?: 'admin';
 }
 
 export const ProtectedRoute = ({ children, requireRole }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { isBarbeiro, isAdmin, loading: roleLoading } = useUserRole(user);
+  const { isAdmin, loading: roleLoading } = useUserRole(user);
+
+  // Debug logging
+  console.log('ProtectedRoute Debug:', {
+    user: user?.email,
+    isAdmin,
+    requireRole,
+    authLoading,
+    roleLoading
+  });
 
   if (authLoading || roleLoading) {
     return (
@@ -23,16 +32,15 @@ export const ProtectedRoute = ({ children, requireRole }: ProtectedRouteProps) =
   }
 
   if (!user) {
+    console.log('ProtectedRoute: No user, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
   if (requireRole === 'admin' && !isAdmin) {
+    console.log('ProtectedRoute: User is not admin, redirecting to /');
     return <Navigate to="/" replace />;
   }
 
-  if (requireRole === 'barbeiro' && !isBarbeiro) {
-    return <Navigate to="/" replace />;
-  }
-
+  console.log('ProtectedRoute: Access granted');
   return <>{children}</>;
 };
