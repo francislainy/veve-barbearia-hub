@@ -12,7 +12,6 @@ import { ServiceSelector } from "@/components/ServiceSelector";
 import { Button } from "@/components/ui/button";
 import { useBookings } from "@/hooks/useBookings";
 import { toast } from "sonner";
-import heroImage from "@/assets/barbershop-hero.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -83,13 +82,8 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative h-[60vh] overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
-        </div>
-        
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+
         <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
           <div className="flex items-center gap-3 mb-4">
             <Scissors className="h-12 w-12 text-primary" />
