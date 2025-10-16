@@ -1,0 +1,106 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { bookingSchema } from "@/lib/validations";
+import { format } from "date-fns";
+import { z } from "zod";
+
+interface BookingFormProps {
+  selectedDate: Date | undefined;
+  selectedTime: string | null;
+  onSubmit: (name: string, phone: string) => void;
+}
+
+export const BookingForm = ({ selectedDate, selectedTime, onSubmit }: BookingFormProps) => {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedDate || !selectedTime) {
+      toast.error("Selecione uma data e horário");
+      return;
+    }
+
+    try {
+      const validated = bookingSchema.parse({
+        name: name.trim(),
+        phone: phone.trim(),
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        time: selectedTime
+      });
+
+      onSubmit(validated.name, validated.phone);
+      setName("");
+      setPhone("");
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error("Erro ao validar dados");
+      }
+    }
+  };
+
+  const isFormValid = name && phone && selectedDate && selectedTime;
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Confirmar Agendamento</CardTitle>
+        <CardDescription>Preencha seus dados para finalizar</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome Completo</Label>
+            <Input
+              id="name"
+              placeholder="Seu nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(00) 00000-0000"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
+
+          {selectedDate && selectedTime && (
+            <div className="p-4 bg-secondary rounded-lg space-y-1">
+              <p className="text-sm font-medium">Resumo do Agendamento:</p>
+              <p className="text-sm text-muted-foreground">
+                Data: {selectedDate.toLocaleDateString('pt-BR')}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Horário: {selectedTime}
+              </p>
+            </div>
+          )}
+
+          <Button 
+            type="submit" 
+            variant="premium" 
+            className="w-full"
+            disabled={!isFormValid}
+          >
+            Confirmar Agendamento
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
