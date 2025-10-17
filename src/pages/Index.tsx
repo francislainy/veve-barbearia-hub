@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Scissors, Trash2, LogIn, User, Calendar, Phone, Clock } from "lucide-react";
@@ -32,6 +32,45 @@ const Index = () => {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const { bookings, isLoading, createBooking, deleteBooking } = useBookings();
 
+  // Restore selections from localStorage on mount
+  useEffect(() => {
+    const savedService = localStorage.getItem('pendingBooking_service');
+    const savedDate = localStorage.getItem('pendingBooking_date');
+    const savedTime = localStorage.getItem('pendingBooking_time');
+
+    if (savedService) {
+      setSelectedService(savedService);
+      localStorage.removeItem('pendingBooking_service');
+    }
+    if (savedDate) {
+      setSelectedDate(new Date(savedDate));
+      localStorage.removeItem('pendingBooking_date');
+    }
+    if (savedTime) {
+      setSelectedTime(savedTime);
+      localStorage.removeItem('pendingBooking_time');
+    }
+  }, []);
+
+  // Save selections to localStorage whenever they change
+  useEffect(() => {
+    if (selectedService) {
+      localStorage.setItem('pendingBooking_service', selectedService);
+    }
+  }, [selectedService]);
+
+  useEffect(() => {
+    if (selectedDate) {
+      localStorage.setItem('pendingBooking_date', selectedDate.toISOString());
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (selectedTime) {
+      localStorage.setItem('pendingBooking_time', selectedTime);
+    }
+  }, [selectedTime]);
+
   // Get booked slots for selected date
   const bookedSlots = selectedDate
     ? bookings
@@ -45,11 +84,14 @@ const Index = () => {
       return;
     }
     
-    if (!selectedDate || !selectedTime || !user) {
-      if (!user) {
-        toast.error("Você precisa estar logado para fazer um agendamento");
-        navigate("/auth");
-      }
+    if (!selectedDate || !selectedTime) {
+      toast.error("Por favor, selecione data e horário");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Você precisa estar logado para fazer um agendamento");
+      navigate("/auth");
       return;
     }
 
@@ -57,7 +99,10 @@ const Index = () => {
     const { success } = await createBooking(name, phone, formattedDate, selectedTime, user.id, selectedService);
 
     if (success) {
-      // Reset form
+      // Clear localStorage and reset form
+      localStorage.removeItem('pendingBooking_service');
+      localStorage.removeItem('pendingBooking_date');
+      localStorage.removeItem('pendingBooking_time');
       setSelectedService(null);
       setSelectedDate(undefined);
       setSelectedTime(null);

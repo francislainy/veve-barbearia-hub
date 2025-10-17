@@ -8,6 +8,8 @@ import { bookingSchema } from "@/lib/validations";
 import { format } from "date-fns";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { LogIn } from "lucide-react";
 
 interface BookingFormProps {
   selectedDate: Date | undefined;
@@ -17,6 +19,7 @@ interface BookingFormProps {
 
 export const BookingForm = ({ selectedDate, selectedTime, onSubmit }: BookingFormProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -57,6 +60,45 @@ export const BookingForm = ({ selectedDate, selectedTime, onSubmit }: BookingFor
   };
 
   const isFormValid = name && phone && selectedDate && selectedTime;
+
+  // Show login prompt if user is not logged in and has selected date/time
+  if (!user && selectedDate && selectedTime) {
+    return (
+      <Card className="w-full border-primary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LogIn className="h-5 w-5" />
+            Faça Login para Continuar
+          </CardTitle>
+          <CardDescription>
+            Você precisa estar logado para confirmar seu agendamento
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-secondary rounded-lg space-y-1">
+            <p className="text-sm font-medium">Suas Seleções:</p>
+            <p className="text-sm text-muted-foreground">
+              Data: {selectedDate.toLocaleDateString('pt-BR')}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Horário: {selectedTime}
+            </p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Suas seleções serão mantidas após o login. Clique no botão abaixo para fazer login ou criar uma conta.
+          </p>
+          <Button
+            variant="premium"
+            className="w-full"
+            onClick={() => navigate("/auth")}
+          >
+            <LogIn className="mr-2 h-4 w-4" />
+            Fazer Login ou Cadastrar
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
