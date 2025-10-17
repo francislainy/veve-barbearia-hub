@@ -16,6 +16,9 @@ export const TimeSlotSelector = ({ selectedTime, onTimeSelect, selectedDate, boo
   // Only show available time slots
   const availableTimeSlots = timeSlots.filter(slot => slot.is_available);
 
+  console.log('TimeSlotSelector - All slots:', timeSlots);
+  console.log('TimeSlotSelector - Available slots:', availableTimeSlots);
+
   if (!selectedDate) {
     return (
       <Card className="w-full">

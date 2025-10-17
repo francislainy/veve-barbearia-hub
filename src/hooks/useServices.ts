@@ -29,6 +29,27 @@ export const useServices = () => {
 
   useEffect(() => {
     fetchServices();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('services-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'services'
+        },
+        (payload) => {
+          console.log('Services changed:', payload);
+          fetchServices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const createService = async (

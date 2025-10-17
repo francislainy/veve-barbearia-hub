@@ -28,6 +28,27 @@ export const useTimeSlots = () => {
 
   useEffect(() => {
     fetchTimeSlots();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('time-slots-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_slots'
+        },
+        (payload) => {
+          console.log('Time slots changed:', payload);
+          fetchTimeSlots();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const createTimeSlot = async (time: string) => {

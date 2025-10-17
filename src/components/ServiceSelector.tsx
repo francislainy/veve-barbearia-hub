@@ -26,6 +26,9 @@ export const ServiceSelector = ({ selectedService, onServiceSelect }: ServiceSel
   // Only show active services
   const activeServices = services.filter((service) => service.is_active);
 
+  console.log('ServiceSelector - All services:', services);
+  console.log('ServiceSelector - Active services:', activeServices);
+
   // Group services by category
   const groupedServices = activeServices.reduce<Record<string, Service[]>>(
     (acc, service) => {
