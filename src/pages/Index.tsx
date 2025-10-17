@@ -371,7 +371,7 @@ const Index = () => {
             <h3 className="text-xl font-bold text-foreground">Vevé Barbershop</h3>
           </div>
           <p className="text-muted-foreground">
-            © 2024 Vevé Barbershop. Todos os direitos reservados.
+            © {new Date().getFullYear()} Vevé Barbershop. Todos os direitos reservados.
           </p>
         </div>
       </footer>
