@@ -10,6 +10,7 @@ interface Booking {
   time: string;
   user_id: string;
   created_at: string;
+  service_name?: string | null; // Added service_name field
 }
 
 export const useMyBookings = (userId: string | undefined) => {
@@ -22,7 +23,10 @@ export const useMyBookings = (userId: string | undefined) => {
     try {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*")
+        .select(`
+          *,
+          service_name:services(name)
+        `)
         .eq("user_id", userId)
         .order("date", { ascending: true })
         .order("time", { ascending: true });
@@ -32,7 +36,14 @@ export const useMyBookings = (userId: string | undefined) => {
         toast.error("Erro ao carregar seus agendamentos");
         return;
       }
-      setBookings(data || []);
+
+      // Flatten the service_name from nested object
+      const formattedData = data?.map(booking => ({
+        ...booking,
+        service_name: booking.service_name?.name || null
+      })) || [];
+
+      setBookings(formattedData);
     } catch (error) {
       console.error("Error fetching my bookings:", error);
       toast.error("Erro ao carregar seus agendamentos");

@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Clock, Trash2, User } from "lucide-react";
+import { Calendar, Clock, Trash2, User, Scissors } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMyBookings } from "@/hooks/useMyBookings";
@@ -78,6 +78,12 @@ export const MyBookings = ({ userId }: MyBookingsProps) => {
                       className="p-4 border border-primary/20 rounded-lg bg-primary/5 flex justify-between items-center"
                     >
                       <div className="space-y-2">
+                        {booking.service_name && (
+                          <div className="flex items-center gap-2">
+                            <Scissors className="h-4 w-4 text-primary" />
+                            <span className="font-semibold text-primary">{booking.service_name}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
@@ -134,6 +140,12 @@ export const MyBookings = ({ userId }: MyBookingsProps) => {
                       className="p-4 border border-border rounded-lg bg-muted/30 opacity-60"
                     >
                       <div className="space-y-2">
+                        {booking.service_name && (
+                          <div className="flex items-center gap-2">
+                            <Scissors className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{booking.service_name}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
@@ -158,4 +170,3 @@ export const MyBookings = ({ userId }: MyBookingsProps) => {
     </Card>
   );
 };
-
