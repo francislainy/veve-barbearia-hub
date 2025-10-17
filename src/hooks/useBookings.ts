@@ -58,7 +58,8 @@ export const useBookings = () => {
 
       if (error) throw error;
 
-      setBookings([...bookings, data]);
+      // Refetch to ensure we have the latest data
+      await fetchBookings();
       toast.success("Agendamento realizado com sucesso!");
       return { success: true };
     } catch (error: any) {
