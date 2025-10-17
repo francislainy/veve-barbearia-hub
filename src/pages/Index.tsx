@@ -270,7 +270,7 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] overflow-hidden">
+      <section className="relative h-[45vh] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
 
         <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
@@ -287,7 +287,7 @@ const Index = () => {
       </section>
 
       {/* Services Section */}
-      <section className="container mx-auto px-4 py-12 border-b border-border">
+      <section className="container mx-auto px-4 py-12 border-b border-border -mt-8">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-bold text-foreground">Nossos Serviços</h2>
