@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -9,30 +9,41 @@ export interface Booking {
   date: string;
   time: string;
   service_id?: string | null;
+  service_name?: string | null;
 }
 
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*")
+        .select(`
+          *,
+          service_name:services(name)
+        `)
         .order("date", { ascending: true })
         .order("time", { ascending: true });
 
       if (error) throw error;
 
-      setBookings(data || []);
+      // Flatten the service_name from nested object
+      const formattedData = data?.map(booking => ({
+        ...booking,
+        service_name: booking.service_name?.name || null
+      })) || [];
+
+      setBookings(formattedData);
+      console.log('Bookings fetched:', formattedData.length);
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast.error("Erro ao carregar agendamentos");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const createBooking = async (
     name: string,
@@ -58,6 +69,7 @@ export const useBookings = () => {
 
       if (error) throw error;
 
+      console.log('Booking created, refetching...');
       // Refetch to ensure we have the latest data
       await fetchBookings();
       toast.success("Agendamento realizado com sucesso!");
@@ -82,7 +94,9 @@ export const useBookings = () => {
 
       if (error) throw error;
 
-      setBookings(bookings.filter((b) => b.id !== id));
+      console.log('Booking deleted, refetching...');
+      // Refetch to ensure we have the latest data
+      await fetchBookings();
       toast.success("Agendamento cancelado");
     } catch (error) {
       console.error("Error deleting booking:", error);
@@ -103,16 +117,20 @@ export const useBookings = () => {
           schema: "public",
           table: "bookings",
         },
-        () => {
+        (payload) => {
+          console.log('Real-time update received:', payload);
           fetchBookings();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchBookings]);
 
   return {
     bookings,

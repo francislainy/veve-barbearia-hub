@@ -86,8 +86,10 @@ export const useMyBookings = (userId: string | undefined) => {
         return;
       }
 
+      console.log('User booking deleted, refetching...');
       toast.success("Agendamento cancelado com sucesso!");
-      setBookings(bookings.filter((b) => b.id !== bookingId));
+      // Refetch to ensure we have the latest data
+      await fetchMyBookings();
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error("Erro ao cancelar agendamento");
