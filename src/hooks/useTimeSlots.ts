@@ -48,16 +48,29 @@ export const useTimeSlots = () => {
 
   const updateTimeSlot = async (id: string, is_available: boolean) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("time_slots")
         .update({ is_available })
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update timeslot error:", error);
+        throw error;
+      }
+
+      // Check if any rows were actually updated
+      if (!data || data.length === 0) {
+        console.error("No rows updated - likely RLS blocked the operation");
+        throw new Error("Você não tem permissão para atualizar horários. Apenas administradores podem fazer isso.");
+      }
+
+      console.log("Timeslot updated successfully:", data);
       toast.success("Horário atualizado com sucesso!");
       await fetchTimeSlots();
       return { success: true };
     } catch (error: any) {
+      console.error("Update timeslot catch:", error);
       toast.error(error.message || "Erro ao atualizar horário");
       return { success: false };
     }
@@ -86,4 +99,3 @@ export const useTimeSlots = () => {
     refetch: fetchTimeSlots,
   };
 };
-

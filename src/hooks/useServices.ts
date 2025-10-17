@@ -60,16 +60,29 @@ export const useServices = () => {
     updates: Partial<Omit<Service, "id" | "created_at" | "updated_at">>
   ) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("services")
         .update(updates)
-        .eq("id", id);
+        .eq("id", id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update service error:", error);
+        throw error;
+      }
+
+      // Check if any rows were actually updated
+      if (!data || data.length === 0) {
+        console.error("No rows updated - likely RLS blocked the operation");
+        throw new Error("Você não tem permissão para atualizar serviços. Apenas administradores podem fazer isso.");
+      }
+
+      console.log("Service updated successfully:", data);
       toast.success("Serviço atualizado com sucesso!");
       await fetchServices();
       return { success: true };
     } catch (error: any) {
+      console.error("Update service catch:", error);
       toast.error(error.message || "Erro ao atualizar serviço");
       return { success: false };
     }
@@ -98,4 +111,3 @@ export const useServices = () => {
     refetch: fetchServices,
   };
 };
-
