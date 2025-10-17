@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 
@@ -11,6 +9,10 @@ interface BookingCalendarProps {
 }
 
 export const BookingCalendar = ({ onDateSelect, selectedDate }: BookingCalendarProps) => {
+  // Get today's date at midnight for proper comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -22,7 +24,11 @@ export const BookingCalendar = ({ onDateSelect, selectedDate }: BookingCalendarP
           mode="single"
           selected={selectedDate}
           onSelect={onDateSelect}
-          disabled={(date) => date < new Date() || date.getDay() === 0}
+          disabled={(date) => {
+            const compareDate = new Date(date);
+            compareDate.setHours(0, 0, 0, 0);
+            return compareDate < today || date.getDay() === 0;
+          }}
           locale={ptBR}
           className={cn("p-3 pointer-events-auto")}
         />
