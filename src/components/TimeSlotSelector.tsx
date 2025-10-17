@@ -16,6 +16,31 @@ export const TimeSlotSelector = ({ selectedTime, onTimeSelect, selectedDate, boo
   // Only show available time slots
   const availableTimeSlots = timeSlots.filter(slot => slot.is_available);
 
+  // Check if a time slot has passed (only for today's date)
+  const isTimePassed = (slotTime: string): boolean => {
+    if (!selectedDate) return false;
+
+    // Check if selected date is today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(selectedDate);
+    compareDate.setHours(0, 0, 0, 0);
+
+    // Only check for passed times if the selected date is today
+    if (compareDate.getTime() !== today.getTime()) {
+      return false;
+    }
+
+    // Parse the slot time (format: "HH:MM")
+    const [hours, minutes] = slotTime.split(':').map(Number);
+    const slotDateTime = new Date();
+    slotDateTime.setHours(hours, minutes, 0, 0);
+
+    // Compare with current time
+    const now = new Date();
+    return slotDateTime < now;
+  };
+
   console.log('TimeSlotSelector - All slots:', timeSlots);
   console.log('TimeSlotSelector - Available slots:', availableTimeSlots);
 
@@ -49,16 +74,19 @@ export const TimeSlotSelector = ({ selectedTime, onTimeSelect, selectedDate, boo
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {availableTimeSlots.map((slot) => {
                 const isBooked = bookedSlots.includes(slot.time);
+                const isPassed = isTimePassed(slot.time);
+                const isDisabled = isBooked || isPassed;
+
                 return (
                   <Button
                     key={slot.id}
                     variant={selectedTime === slot.time ? "premium" : "outline"}
-                    onClick={() => !isBooked && onTimeSelect(slot.time)}
-                    disabled={isBooked}
+                    onClick={() => !isDisabled && onTimeSelect(slot.time)}
+                    disabled={isDisabled}
                     className={cn(
                       "transition-all duration-200",
                       selectedTime === slot.time && "scale-105",
-                      isBooked && "opacity-50 cursor-not-allowed"
+                      isDisabled && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     {slot.time}
@@ -66,9 +94,9 @@ export const TimeSlotSelector = ({ selectedTime, onTimeSelect, selectedDate, boo
                 );
               })}
             </div>
-            {bookedSlots.length > 0 && (
+            {(bookedSlots.length > 0 || availableTimeSlots.some(slot => isTimePassed(slot.time))) && (
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                Horários em cinza já estão reservados
+                Horários em cinza já estão reservados ou já passaram
               </p>
             )}
           </>
