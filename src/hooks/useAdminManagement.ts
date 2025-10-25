@@ -23,6 +23,9 @@ export const useAdminManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
+  // Use env-driven site URL for any email redirect links created programmatically
+  const SITE_URL = (import.meta.env.VITE_SITE_URL as string) || window.location.origin;
+
   const fetchUsers = useCallback(async () => {
     console.log('=== STARTING USER FETCH ===');
 
@@ -178,7 +181,7 @@ export const useAdminManagement = () => {
       return { success: true };
     } catch (error: any) {
       console.error("Error toggling admin role:", error);
-      toast.error(error.message || "Erro ao alterar permissões");
+      toast.error(errsupabase, the link in the email brings them to a localhost 3000 link.or.message || "Erro ao alterar permissões");
       return { success: false };
     }
   };
@@ -267,6 +270,7 @@ export const useAdminManagement = () => {
         email,
         password,
         options: {
+          emailRedirectTo: `${SITE_URL}/`,
           data: {
             full_name: email.split("@")[0],
           },
