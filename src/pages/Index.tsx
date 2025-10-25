@@ -15,6 +15,7 @@ import { UserRoleBadge } from "@/components/UserRoleBadge";
 import { AdminUserManagement } from "@/components/AdminUserManagement";
 import { AdminServiceManagement } from "@/components/AdminServiceManagement";
 import { AdminTimeSlotManagement } from "@/components/AdminTimeSlotManagement";
+import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -237,6 +238,12 @@ const Index = () => {
             </TabsContent>
           </Tabs>
         </main>
+
+        {/* WhatsApp Floating Action Button */}
+        <WhatsAppFab
+          phoneNumber="5566992605301"
+          message="Olá! Gostaria de agendar um horário na Vevé Barbershop."
+        />
       </div>
     );
   }
@@ -375,6 +382,12 @@ const Index = () => {
           </p>
         </div>
       </footer>
+
+      {/* WhatsApp Floating Action Button */}
+      <WhatsAppFab
+        phoneNumber="5566992605301"
+        message="Olá! Gostaria de agendar um horário na Vevé Barbearia?"
+      />
     </div>
   );
 };
