@@ -8,10 +8,6 @@ export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Use an explicit site URL from env when available so emails from Supabase use the correct domain.
-  // Set VITE_SITE_URL in your environment (e.g. .env) to your deployed site URL like https://your-domain.com
-  const SITE_URL = (import.meta.env.VITE_SITE_URL as string) || window.location.origin;
-
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -50,8 +46,8 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, fullName: string, phone: string) => {
     try {
-      const redirectUrl = `${SITE_URL}/`;
-
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -85,8 +81,8 @@ export const useAuth = () => {
 
   const resetPassword = async (email: string) => {
     try {
-      const redirectUrl = `${SITE_URL}/auth`;
-
+      const redirectUrl = `${window.location.origin}/auth`;
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
